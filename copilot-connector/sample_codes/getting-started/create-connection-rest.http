@@ -1,0 +1,185 @@
+### Create Connection
+### Prerequisites: App registered in Entra ID with ExternalConnection.ReadWrite.OwnedBy
+###              and ExternalItem.ReadWrite.OwnedBy permissions, admin consent granted
+
+### Variables
+@tenantId = YOUR_TENANT_ID
+@clientId = YOUR_CLIENT_ID
+@clientSecret = YOUR_CLIENT_SECRET
+@connectionId = contosohelpdesk
+
+### Step 1: Get access token
+# @name auth
+POST https://login.microsoftonline.com/{{tenantId}}/oauth2/v2.0/token
+Content-Type: application/x-www-form-urlencoded
+
+client_id={{clientId}}&client_secret={{clientSecret}}&scope=https://graph.microsoft.com/.default&grant_type=client_credentials
+
+###
+
+@token = {{auth.response.body.access_token}}
+
+### Step 2: Create the connection
+POST https://graph.microsoft.com/v1.0/external/connections
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "id": "{{connectionId}}",
+  "name": "Contoso Helpdesk",
+  "description": "Internal IT helpdesk tickets from the Contoso Helpdesk system. Contains incident reports, service requests, and change requests. Used by IT support staff and employees to track and resolve technical issues."
+}
+
+### Step 3: Register schema (async operation — poll until complete)
+POST https://graph.microsoft.com/v1.0/external/connections/{{connectionId}}/schema
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "baseType": "microsoft.graph.externalItem",
+  "properties": [
+    {
+      "name": "ticketId",
+      "type": "String",
+      "isQueryable": true,
+      "isRetrievable": true,
+      "isExactMatchRequired": true,
+      "aliases": ["ID"]
+    },
+    {
+      "name": "title",
+      "type": "String",
+      "isSearchable": true,
+      "isQueryable": true,
+      "isRetrievable": true,
+      "labels": ["title"]
+    },
+    {
+      "name": "status",
+      "type": "String",
+      "isQueryable": true,
+      "isRetrievable": true,
+      "isRefinable": true,
+      "aliases": ["state"]
+    },
+    {
+      "name": "priority",
+      "type": "Int64",
+      "isQueryable": true,
+      "isRetrievable": true,
+      "isRefinable": true
+    },
+    {
+      "name": "assignedTo",
+      "type": "String",
+      "isSearchable": true,
+      "isQueryable": true,
+      "isRetrievable": true,
+      "aliases": ["assignee", "owner"]
+    },
+    {
+      "name": "createdDate",
+      "type": "DateTime",
+      "isQueryable": true,
+      "isRetrievable": true,
+      "isRefinable": true,
+      "labels": ["createdDateTime"]
+    },
+    {
+      "name": "lastModifiedDate",
+      "type": "DateTime",
+      "isQueryable": true,
+      "isRetrievable": true,
+      "labels": ["lastModifiedDateTime"]
+    },
+    {
+      "name": "itemUrl",
+      "type": "String",
+      "isRetrievable": true,
+      "labels": ["url"]
+    },
+    {
+      "name": "iconUrl",
+      "type": "String",
+      "isRetrievable": true,
+      "labels": ["iconUrl"]
+    }
+  ]
+}
+
+### Step 3b: Poll schema status (repeat until status is "completed")
+GET https://graph.microsoft.com/v1.0/external/connections/{{connectionId}}/schema
+Authorization: Bearer {{token}}
+
+### Step 4: Ingest an item
+PUT https://graph.microsoft.com/v1.0/external/connections/{{connectionId}}/items/TICKET-001
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "acl": [
+    {
+      "type": "everyone",
+      "value": "everyone",
+      "accessType": "grant"
+    }
+  ],
+  "properties": {
+    "ticketId": "TICKET-001",
+    "title": "VPN Connection Drops After Windows Update",
+    "status": "Open",
+    "priority": 2,
+    "assignedTo": "jane.smith@contoso.com",
+    "createdDate": "2026-03-15T10:30:00Z",
+    "lastModifiedDate": "2026-03-20T14:15:00Z",
+    "itemUrl": "https://helpdesk.contoso.com/tickets/TICKET-001",
+    "iconUrl": "https://helpdesk.contoso.com/icons/ticket.png"
+  },
+  "content": {
+    "value": "Title: VPN Connection Drops After Windows Update\nStatus: Open | Priority: P2\nAssigned to: Jane Smith\n\nDescription: Multiple users report VPN disconnections after installing KB5034441 Windows update. Affects GlobalProtect VPN client v6.1.\n\nRoot Cause: Windows update modified network adapter settings, causing MTU mismatch with VPN tunnel configuration.\n\nWorkaround: Reset network adapter MTU to 1400 via 'netsh interface ipv4 set subinterface Ethernet mtu=1400 store=persistent'",
+    "type": "text"
+  }
+}
+
+### Step 5: Configure urlToItemResolver
+PATCH https://graph.microsoft.com/v1.0/external/connections/{{connectionId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "activitySettings": {
+    "urlToItemResolvers": [
+      {
+        "@odata.type": "#microsoft.graph.externalConnectors.itemIdResolver",
+        "urlMatchInfo": {
+          "baseUrls": ["https://helpdesk.contoso.com"],
+          "urlPattern": "/tickets/(?<itemId>[A-Za-z0-9-]+)"
+        }
+      }
+    ]
+  }
+}
+
+### Step 6: Send user activity
+POST https://graph.microsoft.com/v1.0/external/connections/{{connectionId}}/items/TICKET-001/addActivities
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "activities": [
+    {
+      "@odata.type": "#microsoft.graph.externalConnectors.externalActivity",
+      "type": "commented",
+      "startDateTime": "2026-03-23T10:00:00Z",
+      "performedBy": {
+        "@odata.type": "#microsoft.graph.externalConnectors.identity",
+        "id": "USER_ENTRA_OBJECT_ID",
+        "type": "user"
+      }
+    }
+  ]
+}
+
+### Delete a connection (cleanup)
+# DELETE https://graph.microsoft.com/v1.0/external/connections/{{connectionId}}
+# Authorization: Bearer {{token}}
