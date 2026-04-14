@@ -15,7 +15,8 @@ Copilot Connectors bring external data into the Microsoft Graph semantic index. 
 | **End-to-end workflow guidance** | Walks through the full 6-step process: prerequisites → connection → schema → ingestion → experiences → validation |
 | **Schema design** | Knows all property types, attributes, semantic labels, and the hard rules that cause rework if missed |
 | **7 schema archetypes** | Pre-built schema templates for knowledge bases, tickets, CRM, HR, financial, product catalogs, and file repositories |
-| **Code generation** | Provides C# SDK and REST API patterns for every operation |
+| **Multi-language code generation** | Provides C#, Python, Java, TypeScript SDK patterns, and REST API examples for every operation |
+| **Agents Toolkit integration** | Guides building connectors using the M365 Agents Toolkit with TypeScript + Azure Functions |
 | **Content formatting** | Guides text vs HTML decisions, content concatenation, and Copilot summarization optimization |
 | **Chunking strategies** | Handles the 4 MB payload limit with logical, fixed-size, and semantic boundary chunking |
 | **ACL configuration** | Covers user, group, everyone, external groups, and deny patterns |
@@ -33,15 +34,49 @@ copilot-connector/
 │   ├── content-and-ingestion.md                # Content formatting, chunking, throttling, batch patterns
 │   └── schema-archetypes.md                    # 7 pre-built schema templates for common scenarios
 └── sample_codes/
-    ├── getting-started/
-    │   ├── create-connection.cs                # End-to-end C# example
+    ├── csharp/
+    │   ├── getting-started/
+    │   │   └── create-connection.cs            # End-to-end C# example
+    │   └── common-patterns/
+    │       ├── schema-registration.cs          # Schema registration with status polling
+    │       ├── item-ingestion.cs               # Item creation, content building, upsert/delete
+    │       ├── throttle-resilient-ingestion.cs # Retry logic + batch concurrency control
+    │       ├── acl-configuration.cs            # All ACL patterns + external group management
+    │       └── incremental-sync.cs             # Change detection + delta sync
+    ├── python/
+    │   ├── getting-started/
+    │   │   └── create-connection.py            # End-to-end Python example
+    │   └── common-patterns/
+    │       ├── schema-registration.py          # Schema registration with async polling
+    │       ├── item-ingestion.py               # Item creation, content building, upsert/delete
+    │       ├── throttle-resilient-ingestion.py # Retry + asyncio.Semaphore concurrency
+    │       ├── acl-configuration.py            # All ACL patterns + external group management
+    │       └── incremental-sync.py             # Change detection + delta sync
+    ├── java/
+    │   ├── getting-started/
+    │   │   └── CreateConnection.java           # End-to-end Java example
+    │   └── common-patterns/
+    │       ├── SchemaRegistration.java          # Schema registration with status polling
+    │       ├── ItemIngestion.java               # Item creation, content building, upsert/delete
+    │       ├── ThrottleResilientIngestion.java  # Retry + ExecutorService concurrency
+    │       ├── AclConfiguration.java            # All ACL patterns + external group management
+    │       └── IncrementalSync.java             # Change detection + delta sync
+    ├── typescript/
+    │   ├── getting-started/
+    │   │   └── create-connection.ts            # End-to-end TypeScript example
+    │   └── common-patterns/
+    │       ├── schema-registration.ts          # Schema registration with polling
+    │       ├── item-ingestion.ts               # Item creation, content building, upsert/delete
+    │       ├── throttle-resilient-ingestion.ts # Retry + semaphore concurrency
+    │       ├── acl-configuration.ts            # All ACL patterns + external group management
+    │       └── incremental-sync.ts             # Change detection + delta sync
+    ├── rest/
     │   └── create-connection-rest.http         # Raw REST API calls
-    └── common-patterns/
-        ├── schema-registration.cs              # Schema registration with status polling
-        ├── item-ingestion.cs                   # Item creation, content building, upsert/delete
-        ├── throttle-resilient-ingestion.cs     # Retry logic + batch concurrency control
-        ├── acl-configuration.cs                # All ACL patterns + external group management
-        └── incremental-sync.cs                 # Change detection + delta sync
+    └── agents-toolkit/
+        ├── README.md                           # Agents Toolkit setup and walkthrough guide
+        ├── connector-config.ts                 # Connection + schema configuration
+        ├── data-source.ts                      # Data source integration patterns
+        └── declarative-agent-connector.tsp     # TypeSpec Declarative Agent example
 ```
 
 ## Installation
@@ -87,7 +122,7 @@ You can also reference the skill directly from any location by pointing your age
 **The agent will:**
 1. Reference the **Tickets/Work Items archetype** from `schema-archetypes.md`
 2. Generate a schema with the correct property types, attributes, and semantic labels
-3. Produce C# or REST code for creating the connection and registering the schema
+3. Produce C#, Python, Java, or TypeScript code for creating the connection and registering the schema
 4. Build a content concatenation pattern that merges description + resolution + comments
 5. Set up ACLs based on your permission model
 6. Remind you to enable inline results in the M365 Admin Center
@@ -149,6 +184,20 @@ You can also reference the skill directly from any location by pointing your age
 4. Add Entra ID users to the external groups
 5. Reference those groups in item ACLs
 6. Warn against expanding group membership into individual item ACLs
+
+### Example 4: Build a Connector with the Agents Toolkit
+
+**You say:**
+> "I want to build a Copilot Connector using the Agents Toolkit in VS Code. My data is in a custom REST API."
+
+**The agent will:**
+1. Walk through the **Agents Toolkit** setup (VS Code extension, prerequisites)
+2. Guide you through creating a new Copilot Connector project
+3. Show how to customize `src/custom/` for your REST API data source
+4. Help design the schema in `src/references/`
+5. Explain the F5 local development experience
+6. Guide deployment to Azure Functions
+7. Optionally, show how to create a Declarative Agent that uses the connector as a knowledge source
 
 ## Prerequisites for Building Connectors
 

@@ -59,9 +59,19 @@ Is there a pre-built connector for your data source?
 |------|----------|----------|
 | **Microsoft 365 Agents Toolkit** | TypeScript/C# | New connectors with integrated agent development |
 | **Microsoft Graph REST API** | Any (HTTP) | Maximum flexibility, polyglot teams, serverless |
+| **Microsoft Graph SDK** | C# / Python / Java / TypeScript | Production-grade with type safety and IDE support |
 | **Copilot Connectors SDK** | C# (primary) | Production-grade with full crawl management |
 | **Pre-built connectors** | No code | 100+ supported data sources |
 | **Federated connectors** (Preview) | Any (HTTP) | Real-time, non-indexed access to live data |
+
+### SDK Quick Reference
+
+| SDK | Package | Auth Package |
+|-----|---------|--------------|
+| **C# (.NET)** | `Microsoft.Graph` (NuGet) | `Azure.Identity` |
+| **Python** | `msgraph-sdk` (pip) | `azure-identity` |
+| **Java** | `com.microsoft.graph:microsoft-graph` (Maven) | `com.azure:azure-identity` |
+| **TypeScript** | `@microsoft/microsoft-graph-client` (npm) | `@azure/identity` |
 
 ## Key Concepts
 
@@ -205,8 +215,18 @@ What identity system does your source use?
 
 ## Quick Start
 
-See [getting-started/create-connection.cs](sample_codes/getting-started/create-connection.cs) for a complete C# example.
-See [getting-started/create-connection-rest.http](sample_codes/getting-started/create-connection-rest.http) for raw REST API calls.
+Pick the language that matches your project:
+
+| Language | Getting Started | Common Patterns |
+|----------|----------------|-----------------|
+| **C# (.NET)** | [create-connection.cs](sample_codes/csharp/getting-started/create-connection.cs) | [csharp/common-patterns/](sample_codes/csharp/common-patterns/) |
+| **Python** | [create-connection.py](sample_codes/python/getting-started/create-connection.py) | [python/common-patterns/](sample_codes/python/common-patterns/) |
+| **Java** | [CreateConnection.java](sample_codes/java/getting-started/CreateConnection.java) | [java/common-patterns/](sample_codes/java/common-patterns/) |
+| **TypeScript** | [create-connection.ts](sample_codes/typescript/getting-started/create-connection.ts) | [typescript/common-patterns/](sample_codes/typescript/common-patterns/) |
+| **REST API** | [create-connection-rest.http](sample_codes/rest/create-connection-rest.http) | — |
+| **Agents Toolkit** | [agents-toolkit/README.md](sample_codes/agents-toolkit/README.md) | [agents-toolkit/](sample_codes/agents-toolkit/) |
+
+Each language folder includes the same 6 samples: end-to-end connection setup, schema registration, item ingestion, throttle-resilient batch ingestion, ACL configuration, and incremental sync.
 
 ## Learn More
 

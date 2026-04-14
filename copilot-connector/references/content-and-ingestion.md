@@ -56,6 +56,75 @@ foreach (var comment in ticket.Comments.OrderByDescending(c => c.Date))
     contentBuilder.AppendLine($"[{comment.Author} - {comment.Date:yyyy-MM-dd}]: {comment.Text}");
 ```
 
+### Content Concatenation Pattern (Python)
+
+```python
+def build_ticket_content(title, status, priority, assignee, description,
+                         root_cause=None, resolution=None, comments=None):
+    lines = [
+        f"Title: {title}",
+        f"Status: {status} | Priority: {priority}",
+        f"Assigned to: {assignee}",
+        "",
+        f"Description: {description}",
+    ]
+    if root_cause:
+        lines.append(f"\nRoot Cause: {root_cause}")
+    if resolution:
+        lines.append(f"\nResolution: {resolution}")
+    if comments:
+        lines.append("\nComments:")
+        for author, date, text in comments:
+            lines.append(f"  [{author} - {date:%Y-%m-%d}]: {text}")
+    return "\n".join(lines)
+```
+
+### Content Concatenation Pattern (Java)
+
+```java
+public static String buildTicketContent(String title, String status,
+        String priority, String assignee, String description,
+        String rootCause, String resolution) {
+    var sb = new StringBuilder();
+    sb.append("Title: ").append(title).append("\n");
+    sb.append("Status: ").append(status).append(" | Priority: ").append(priority).append("\n");
+    sb.append("Assigned to: ").append(assignee).append("\n\n");
+    sb.append("Description: ").append(description).append("\n");
+    if (rootCause != null && !rootCause.isBlank())
+        sb.append("\nRoot Cause: ").append(rootCause).append("\n");
+    if (resolution != null && !resolution.isBlank())
+        sb.append("\nResolution: ").append(resolution).append("\n");
+    return sb.toString();
+}
+```
+
+### Content Concatenation Pattern (TypeScript)
+
+```typescript
+function buildTicketContent(
+  title: string, status: string, priority: string, assignee: string,
+  description: string, rootCause?: string, resolution?: string,
+  comments?: Array<{ author: string; date: Date; text: string }>
+): string {
+  const lines = [
+    `Title: ${title}`,
+    `Status: ${status} | Priority: ${priority}`,
+    `Assigned to: ${assignee}`,
+    "",
+    `Description: ${description}`,
+  ];
+  if (rootCause) lines.push(`\nRoot Cause: ${rootCause}`);
+  if (resolution) lines.push(`\nResolution: ${resolution}`);
+  if (comments?.length) {
+    lines.push("\nComments:");
+    for (const c of comments) {
+      lines.push(`  [${c.author} - ${c.date.toISOString().slice(0, 10)}]: ${c.text}`);
+    }
+  }
+  return lines.join("\n");
+}
+```
+
 ### What Goes in `content` vs Properties
 
 | Put in `content` | Put in properties only |
@@ -205,6 +274,48 @@ public async Task IngestWithRetry(ExternalItem item, int maxRetries = 5)
 }
 ```
 
+### Throttle-Resilient Ingestion (Python)
+
+```python
+async def ingest_with_retry(graph_client, connection_id, item, max_retries=5):
+    for attempt in range(max_retries + 1):
+        try:
+            await (graph_client.external.connections
+                .by_external_connection_id(connection_id)
+                .items.by_external_item_id(item.id)
+                .put(item))
+            return
+        except ODataError as e:
+            if e.response_status_code == 429 and attempt < max_retries:
+                wait = int(e.response_headers.get("Retry-After", 2 ** attempt))
+                await asyncio.sleep(wait)
+            else:
+                raise
+```
+
+### Throttle-Resilient Ingestion (TypeScript)
+
+```typescript
+async function ingestWithRetry(
+  graphClient: Client, connectionId: string,
+  item: ExternalItemPayload, maxRetries = 5
+): Promise<void> {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      await graphClient.api(
+        `/external/connections/${connectionId}/items/${item.id}`
+      ).put(item);
+      return;
+    } catch (error: any) {
+      if (error.statusCode === 429 && attempt < maxRetries) {
+        const retryAfter = parseInt(error.headers?.["retry-after"] ?? String(2 ** attempt));
+        await new Promise(r => setTimeout(r, retryAfter * 1000));
+      } else { throw error; }
+    }
+  }
+}
+```
+
 ### Batch Ingestion Strategies
 
 **1. Sequential with rate limiting** — One at a time with delay. Simplest, lowest throughput.
@@ -258,6 +369,40 @@ if (byteSize > 3_800_000) // Leave 200KB buffer
 else
 {
     await IngestWithRetry(externalItem);
+}
+```
+
+### Payload Size Check (Python)
+
+```python
+import json
+
+payload = json.dumps(item_dict)
+byte_size = len(payload.encode("utf-8"))
+
+if byte_size > 3_800_000:  # Leave 200KB buffer
+    chunks = chunk_content(item_dict["content"]["value"], max_chunk_bytes=3_500_000)
+    for i, chunk in enumerate(chunks):
+        chunked = clone_item_with_chunk(item_dict, chunk, i, len(chunks))
+        await ingest_with_retry(graph_client, connection_id, chunked)
+else:
+    await ingest_with_retry(graph_client, connection_id, item)
+```
+
+### Payload Size Check (TypeScript)
+
+```typescript
+const payload = JSON.stringify(item);
+const byteSize = Buffer.byteLength(payload, "utf-8");
+
+if (byteSize > 3_800_000) { // Leave 200KB buffer
+  const chunks = chunkContent(item.content.value, 3_500_000);
+  for (let i = 0; i < chunks.length; i++) {
+    const chunked = cloneItemWithChunk(item, chunks[i], i, chunks.length);
+    await ingestWithRetry(graphClient, connectionId, chunked);
+  }
+} else {
+  await ingestWithRetry(graphClient, connectionId, item);
 }
 ```
 
