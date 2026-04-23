@@ -420,10 +420,24 @@ Add pre-computed aggregate values as properties on parent items (e.g., `totalTas
 
 ### Strategy 3: Declarative Agent Instructions
 
-Include explicit instructions telling the agent to:
-1. Look for summary items first
-2. Reference pre-computed values
-3. Never present search-result counts as exact totals
+Include explicit instructions in your Declarative Agent to handle aggregation correctly:
+
+```
+## Data Interpretation Instructions
+
+This connector contains individual support tickets and pre-computed summary items.
+
+When users ask aggregate questions (counts, totals, averages, trends):
+1. Look for summary items first (property: reportType = "monthly-summary" or "weekly-summary")
+2. Reference the pre-computed values in summary items rather than counting individual tickets
+3. If no summary item exists for the requested aggregation, clearly state that the data shown represents a sample and may not be comprehensive
+4. Never present a count derived from search results as an exact total
+
+Available summary item types:
+- Monthly team summaries (reportType: "monthly-summary")
+- Weekly status reports (reportType: "weekly-summary")
+- Quarterly trend analyses (reportType: "quarterly-trend")
+```
 
 ### Strategy 4: Connector Actions + Power Automate
 
@@ -484,13 +498,74 @@ PATCH /external/connections/{connectionId}
 
 Supported types: `created`, `modified`, `commented`, `viewed`. Activities older than **7 days** don't surface in the Microsoft 365 app.
 
+```http
+POST /external/connections/{connectionId}/items/{itemId}/addActivities
+{
+  "activities": [
+    {
+      "@odata.type": "#microsoft.graph.externalConnectors.externalActivity",
+      "type": "commented",
+      "startDateTime": "2026-03-23T10:00:00Z",
+      "performedBy": {
+        "@odata.type": "#microsoft.graph.externalConnectors.identity",
+        "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+        "type": "user"
+      }
+    }
+  ]
+}
+```
+
 ### 7. Enable Inline Results
 
 In M365 Admin Center: **Search & intelligence** > **Customizations** > **Verticals** > **All** > **Manage connector result** > Enable **Show results inline**.
 
 ### 8. Configure Result Types (Optional)
 
-Create custom result layouts using Adaptive Cards for richer search result presentation.
+Create custom result layouts using Adaptive Cards for richer search result presentation:
+
+```json
+{
+  "type": "AdaptiveCard",
+  "body": [
+    {
+      "type": "TextBlock",
+      "text": "${title}",
+      "weight": "Bolder",
+      "size": "Medium"
+    },
+    {
+      "type": "TextBlock",
+      "text": "Status: ${status} | Priority: ${priority}",
+      "spacing": "Small"
+    },
+    {
+      "type": "TextBlock",
+      "text": "${description}",
+      "wrap": true,
+      "maxLines": 3
+    }
+  ],
+  "actions": [
+    {
+      "type": "Action.OpenUrl",
+      "title": "Open Item",
+      "url": "${url}"
+    }
+  ]
+}
+```
+
+For the **All vertical**, inline results render with default or custom result types. For **custom verticals**, a result type/layout is generally required for proper rendering.
+
+### Declarative Agents with Connectors
+
+When building a Declarative Agent that uses your connector as a knowledge source:
+
+1. **Include property descriptions** in the agent's instruction set
+2. **Specify available query patterns** — tell the agent which properties support filtering
+3. **Document aggregation boundaries** — explain what summary data is available
+4. **Provide example queries** — include sample natural-language questions and expected data sources
 
 ## Delimited Data (CSV/TSV)
 

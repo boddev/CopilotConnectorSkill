@@ -2,7 +2,9 @@
 
 An AI agent skill that transforms GitHub Copilot CLI and Claude Code into specialized assistants for building **Microsoft 365 Copilot Connectors** (formerly Microsoft Graph Connectors).
 
-When activated, this skill gives your AI agent deep knowledge of the Microsoft Graph connectors API, schema design best practices, content ingestion patterns, and ACL configuration — so it can guide you through every step of creating a custom connector that surfaces external data in Microsoft 365 Copilot and Microsoft Search.
+When activated, this skill gives your AI agent deep knowledge of the Microsoft Graph connectors API, schema design best practices, content ingestion patterns, ACL configuration, enterprise security, and production readiness — so it can guide you through every step of creating a custom connector that surfaces external data in Microsoft 365 Copilot and Microsoft Search.
+
+All connectors built with this skill follow the [**Copilot Connector Best Practices**](https://github.com/boddev/CustomCopilotConnectorBestPractices) — a comprehensive guide covering schema design, content optimization, security hardening, and production deployment.
 
 ## What Are Copilot Connectors?
 
@@ -20,7 +22,12 @@ Copilot Connectors bring external data into the Microsoft Graph semantic index. 
 | **Content formatting** | Guides text vs HTML decisions, content concatenation, and Copilot summarization optimization |
 | **Chunking strategies** | Handles the 4 MB payload limit with logical, fixed-size, and semantic boundary chunking |
 | **ACL configuration** | Covers user, group, everyone, external groups, and deny patterns |
-| **Aggregation awareness** | Warns that Copilot can't aggregate across items and suggests pre-computed summary patterns |
+| **Copilot optimization** | urlToItemResolver, user activities, Adaptive Card result types, rank hints, Declarative Agent guidance |
+| **Aggregation awareness** | Warns that Copilot can't aggregate across items and suggests pre-computed summary patterns, DA instructions, and anti-patterns |
+| **Delimited data handling** | CSV/TSV parsing, row-per-item mapping, multi-value delimiters, large file strategies |
+| **Enterprise security** | App vs delegated permissions, Key Vault + Managed Identity, source system hardening, blast radius analysis |
+| **Production readiness** | Deployment architecture, crawl scheduling, audit logging, admin consent package preparation |
+| **Troubleshooting** | Common issues table, debugging workflow, SDK test utility, Admin Center monitoring |
 | **Throttle resilience** | Provides retry logic, batch concurrency, and incremental sync patterns |
 | **Dynamic lookups** | Includes Microsoft Learn MCP queries for deeper topics not stored locally |
 
@@ -32,7 +39,9 @@ copilot-connector/
 ├── references/
 │   ├── schema-design.md                        # Property types, attributes, semantic labels, aliases
 │   ├── content-and-ingestion.md                # Content formatting, chunking, throttling, batch patterns
-│   └── schema-archetypes.md                    # 7 pre-built schema templates for common scenarios
+│   ├── schema-archetypes.md                    # 7 pre-built schema templates for common scenarios
+│   ├── enterprise-security.md                  # Production readiness, Key Vault, blast radius, admin consent
+│   └── troubleshooting.md                      # Common issues, debugging workflow, testing checklist
 └── sample_codes/
     ├── csharp/
     │   ├── getting-started/
@@ -209,6 +218,32 @@ This skill helps you *build* connectors. To actually run them, you'll need:
   - `ExternalItem.ReadWrite.OwnedBy`
 - **Admin consent** for the application
 - **Microsoft 365 Copilot license** (to test Copilot integration)
+
+## Best Practices
+
+This skill integrates all best practices from the **[Copilot Connector Best Practices & Development Guide](https://github.com/boddev/CustomCopilotConnectorBestPractices)**. Every connector built with this skill follows these practices, covering:
+
+- **Schema design** — Property naming, types, attributes, semantic labels, aliases, and the hard invariants that cause rework if missed
+- **Content optimization** — Structuring content for Copilot summarization, HTML best practices, content concatenation patterns
+- **Data handling** — Chunking strategies, delimited data (CSV/TSV), large payload management
+- **Aggregation** — Pre-computed summaries, Declarative Agent instructions, anti-patterns
+- **Copilot integration** — urlToItemResolver, user activities, Adaptive Cards, rank hints
+- **Access control** — ACL patterns, external groups, deny rules
+- **Enterprise security** — Key Vault + Managed Identity, source system hardening, defense-in-depth, blast radius analysis
+- **Production readiness** — Deployment architecture, crawl scheduling, admin consent package, secret rotation
+- **Troubleshooting** — Common issues, debugging workflow, Admin Center monitoring
+
+### Updating Best Practices
+
+To pull the latest version of the best practices guide into a local copy for offline reference:
+
+```bash
+# From the skill directory
+curl -sL https://raw.githubusercontent.com/boddev/CustomCopilotConnectorBestPractices/main/ReadMe.md \
+  -o references/best-practices-guide.md
+```
+
+This is optional — the skill already embeds all best practices in its reference files. Use this if you want the original comprehensive guide available locally.
 
 ## Key Resources
 

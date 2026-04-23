@@ -176,6 +176,44 @@ Copilot **cannot reliably aggregate across multiple items** (counts, sums, avera
 
 When using Declarative Agents, instruct the agent to look for summary items first and never present search-result counts as exact totals.
 
+> See [content-and-ingestion.md](references/content-and-ingestion.md#data-aggregation-strategies) for all 5 aggregation strategies, DA instruction templates, and anti-patterns to avoid.
+
+## Surfacing Data in Copilot
+
+To maximize Copilot discovery and relevance:
+
+1. **Rich connection description** — Answer: what content? Who uses it? When? Use `contentCategory` for classification.
+2. **Semantic labels** — Assign at minimum: `title`, `url`, `iconUrl`. Priority order for discovery: `title` → `lastModifiedDateTime` → `lastModifiedBy` → `url`.
+3. **Mark properties searchable** — The `searchable` attribute is the most critical for Copilot matching.
+4. **Configure rank hints** — For searchable properties not mapped to labels, set importance in Admin Center.
+5. **Add urlToItemResolver** — Enables URL detection when users share links to your external content.
+6. **Send user activities** — `created`, `modified`, `commented`, `viewed` boost item relevance.
+7. **Enable inline results** — In Admin Center: Search & intelligence > Verticals > All > Show results inline.
+8. **Configure result types** — Optional Adaptive Card layouts for richer search result presentation.
+
+> See [content-and-ingestion.md](references/content-and-ingestion.md#surfacing-data-in-copilot--enablement-steps) for API examples (urlToItemResolver, activities, Adaptive Cards).
+
+## Enterprise Security & Production Readiness
+
+Before deploying to production, address these security requirements:
+
+- **Use application permissions** (not delegated) — connectors are daemon workloads requiring unattended execution
+- **Use `.OwnedBy` scope** — restricts access to only this app's connections and items
+- **Store secrets in Azure Key Vault** — use Managed Identity for zero-credential deployment
+- **Harden source system access** — dedicated integration user, read-only profile, field-level security
+- **Enforce unidirectional data flow** — read from source, write to Graph, never the reverse
+- **Document defense-in-depth layers** — multiple independent security controls
+- **Complete blast radius analysis** — assess impact of credential compromise
+- **Prepare admin consent package** — permission justification, architecture diagram, API inventory
+
+> See [enterprise-security.md](references/enterprise-security.md) for the complete enterprise security reference, blast radius templates, deployment architecture, and admin consent checklist.
+
+## Monitoring & Troubleshooting
+
+Monitor connector health in the M365 Admin Center under **Search & intelligence > Connectors**. Common issues include missing semantic labels, incorrect ACLs, and throttle errors.
+
+> See [troubleshooting.md](references/troubleshooting.md) for the debugging workflow, common issues table, and testing checklist.
+
 ## ACL Decision Tree
 
 ```
@@ -203,6 +241,8 @@ What identity system does your source use?
 - [ ] Schema registered with all properties and correct attributes
 - [ ] Semantic labels assigned: `title`, `url`, `iconUrl` (minimum)
 - [ ] Text properties marked as `searchable`
+- [ ] Filter properties marked as `queryable` and/or `refinable`
+- [ ] Display properties marked as `retrievable`
 - [ ] Content property populated with rich, descriptive text
 - [ ] ACLs configured and tested with multiple user roles
 - [ ] Connection description is detailed and descriptive
@@ -211,7 +251,32 @@ What identity system does your source use?
 - [ ] Inline results enabled in the "All" vertical (Admin Center)
 - [ ] Throttle handling with exponential backoff implemented
 - [ ] Items within 4 MB limit (chunked if necessary)
+- [ ] Incremental crawl strategy defined for ongoing sync
 - [ ] Summary items ingested for commonly-asked aggregate questions
+
+## Copilot Optimization Checklist
+
+- [ ] Content is information-dense and well-structured
+- [ ] Content leads with the most important information
+- [ ] Multiple text fields concatenated into content with labels
+- [ ] Summary items ingested for aggregate data queries
+- [ ] Declarative Agent instructions include property descriptions
+- [ ] Declarative Agent instructions address aggregation limitations
+- [ ] Properties have clear, descriptive names (not abbreviations)
+- [ ] Aliases defined for common synonyms
+- [ ] Connection description answers: what, who, when, characteristics
+
+## Security Checklist
+
+- [ ] ACLs mirror source system permissions
+- [ ] External groups used for non-Entra ID permissions
+- [ ] Group memberships not expanded into individual ACLs
+- [ ] `deny` entries used sparingly and intentionally
+- [ ] Compliance content type set to `text` (if applicable)
+- [ ] Sensitive data excluded or properly access-controlled
+- [ ] All Entra object IDs validated (not emails or UPNs)
+
+> See [enterprise-security.md](references/enterprise-security.md) for the full enterprise security & production readiness checklist.
 
 ## Quick Start
 
@@ -242,6 +307,7 @@ Each language folder includes the same 6 samples: end-to-end connection setup, s
 | Result layout (Adaptive Cards) | `microsoft_docs_search(query="Microsoft Search customize results layout adaptive cards")` |
 | Declarative Agents + connectors | `microsoft_docs_search(query="declarative agent copilot connector knowledge source")` |
 | External groups (ACL) | `microsoft_docs_search(query="Microsoft Graph external groups permissions connectors")` |
-| Troubleshooting | `microsoft_docs_search(query="Copilot connector troubleshoot items not appearing")` |
-| Best practices reference | Fetch from `https://github.com/boddev/CustomCopilotConnectorBestPractices` |
+| Troubleshooting | See [troubleshooting.md](references/troubleshooting.md) for common issues, then `microsoft_docs_search(query="Copilot connector troubleshoot items not appearing")` |
+| Enterprise security | See [enterprise-security.md](references/enterprise-security.md) for production readiness |
+| Best practices reference | See `https://github.com/boddev/CustomCopilotConnectorBestPractices` for the comprehensive guide |
 | Schema archetypes | See [schema-archetypes.md](references/schema-archetypes.md) for pre-built templates |
