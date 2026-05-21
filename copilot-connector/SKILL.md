@@ -57,7 +57,8 @@ Required connector pipeline:
 3. **Apply/merge schema suggestion** - review `schema-suggestion.json`, merge any source-specific schema requirements, register the final schema, and poll until registration completes.
 4. **Ingest enhanced items only** - read `enhanced-items.jsonl`; use each item's `properties` and `content.value` as the Graph external item payload. Apply source ACLs in the connector pipeline if the enhancer output does not include final ACLs.
 5. **Halt ingestion on enhancer errors** - if the enhancer fails, halt the ingestion process for that crawl and log the error. Do not ingest any items from the failed crawl. Never silently fall back to raw item ingestion.
-6. **Persist crawl state after successful ingestion** - update checkpoints only after enhanced items have been successfully written to Graph.
+6. **Handle partial enhancer output** - if the enhancer produces partial output (some items valid, others incomplete or malformed), ingest only the valid items and log the incomplete ones for review. Do not skip the entire crawl for partial failures.
+7. **Persist crawl state after successful ingestion** - update checkpoints only after enhanced items have been successfully written to Graph.
 
 The intended flow is:
 
