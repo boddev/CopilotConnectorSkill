@@ -1,6 +1,6 @@
 ---
 name: copilot-connector
-description: Build custom Microsoft 365 Copilot Connectors (formerly Microsoft Graph Connectors) to ingest external data into the Microsoft Graph semantic index. Use when creating, configuring, or troubleshooting custom connectors that surface external content in Microsoft 365 Copilot, Microsoft Search, and Context IQ. Covers schema design, content ingestion, ACL configuration, chunking strategies, and Copilot optimization.
+description: Build custom Microsoft 365 Copilot Connectors (formerly Microsoft Graph Connectors) to ingest external data into the Microsoft Graph semantic index. Use when creating, configuring, or troubleshooting custom connectors that surface external content in Microsoft 365 Copilot, Microsoft Search, and Context IQ. Covers schema design, content ingestion, ACL configuration, chunking strategies, and Copilot optimization. 
 ---
 
 # Microsoft 365 Copilot Connectors
@@ -41,7 +41,7 @@ Each connector defines a **connection** to an external data source, registers a 
 
 ## Required Data Enhancer Integration
 
-When this skill is invoked to create or scaffold a custom Copilot Connector, integrate the data enhancer by default. Do not build a connector that ingests raw crawled records or documents directly unless the user explicitly opts out.
+When this skill is invoked to create or scaffold a custom Copilot Connector, integrate the data enhancer by default. Do not build a connector that ingests raw crawled records or documents directly unless the user explicitly requests raw ingestion without enhancement (e.g., "skip the data enhancer", "I don't need content enhancement", or "ingest raw data directly").
 
 Use the reusable enhancer assets in:
 
