@@ -204,7 +204,7 @@ Copilot **cannot reliably aggregate across multiple items** (counts, sums, avera
 
 When using Declarative Agents, instruct the agent to look for summary items first and never present search-result counts as exact totals.
 
-> See [content-and-ingestion.md](references/content-and-ingestion.md#data-aggregation-strategies) for all 5 aggregation strategies, DA instruction templates, and anti-patterns to avoid.
+> See [content-and-ingestion.md](references/content-and-ingestion.md) for all 5 aggregation strategies, DA instruction templates, and anti-patterns to avoid.
 
 ## Surfacing Data in Copilot
 
@@ -219,7 +219,7 @@ To maximize Copilot discovery and relevance:
 7. **Enable inline results** — In Admin Center: Search & intelligence > Verticals > All > Show results inline.
 8. **Configure result types** — Optional Adaptive Card layouts for richer search result presentation.
 
-> See [content-and-ingestion.md](references/content-and-ingestion.md#surfacing-data-in-copilot--enablement-steps) for API examples (urlToItemResolver, activities, Adaptive Cards).
+> See [content-and-ingestion.md](references/content-and-ingestion.md) for API examples (urlToItemResolver, activities, Adaptive Cards).
 
 ## Enterprise Security & Production Readiness
 
