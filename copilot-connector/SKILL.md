@@ -37,7 +37,7 @@ Each connector defines a **connection** to an external data source, registers a 
 | 6. Configure Experiences | Enable inline results, set up search verticals, add urlToItemResolver, send user activities | M365 Admin Center + API |
 | 7. Validate & Monitor | Verify items appear in search/Copilot, monitor crawl health, check quota usage | Admin Center + test queries |
 
-> **Schema registration is asynchronous.** After POSTing a schema, poll `GET /external/connections/{id}/schema` until `status` is `completed` before ingesting items. This can take up to 10 minutes.
+> **Schema registration is asynchronous.** After POSTing a schema, poll `GET /external/connections/{id}/schema` until `status` is `completed` before ingesting items. This can take up to 10 minutes. If schema registration fails or times out, retry the registration up to three times with exponential backoff. Log the failure and halt item ingestion if it persists.
 
 ## Required Data Enhancer Integration
 
