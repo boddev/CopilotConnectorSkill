@@ -25,35 +25,60 @@ Build custom connectors that bring external data into the Microsoft Graph semant
 
 Each connector defines a **connection** to an external data source, registers a **schema** for the data shape, and ingests **items** (with content, metadata, and ACLs) into the Microsoft Graph index. Copilot and Search then reason over this data alongside native Microsoft 365 content.
 
-## End-to-End Workflow (6 Steps)
+## End-to-End Workflow (7 Steps)
 
 | Step | What | Key API/Action |
 |------|------|-----------------|
 | 1. Prerequisites & Permissions | Register app in Entra ID, grant `ExternalConnection.ReadWrite.OwnedBy` + `ExternalItem.ReadWrite.OwnedBy`, get admin consent | Entra admin center |
 | 2. Create Connection | Register external data source with unique ID, name, and rich description | `POST /external/connections` |
-| 3. Register Schema | Define properties, types, search attributes, and semantic labels | `POST /external/connections/{id}/schema` |
-| 4. Ingest Items | Push external items with content, properties, and ACLs | `PUT /external/connections/{id}/items/{itemId}` |
-| 5. Configure Experiences | Enable inline results, set up search verticals, add urlToItemResolver, send user activities | M365 Admin Center + API |
-| 6. Validate & Monitor | Verify items appear in search/Copilot, monitor crawl health, check quota usage | Admin Center + test queries |
+| 3. Integrate Data Enhancer | Add the Python or TypeScript data-enhancer script to the connector and use its schema suggestion as schema input | `sample_codes/data-enhancer/` |
+| 4. Register Schema | Define properties, types, search attributes, and semantic labels | `POST /external/connections/{id}/schema` |
+| 5. Crawl, Enhance, Ingest Items | Every full and incremental crawl must route new/changed source data through the data enhancer before Graph ingestion | Enhancer output + `PUT /external/connections/{id}/items/{itemId}` |
+| 6. Configure Experiences | Enable inline results, set up search verticals, add urlToItemResolver, send user activities | M365 Admin Center + API |
+| 7. Validate & Monitor | Verify items appear in search/Copilot, monitor crawl health, check quota usage | Admin Center + test queries |
 
 > **Schema registration is asynchronous.** After POSTing a schema, poll `GET /external/connections/{id}/schema` until `status` is `completed` before ingesting items. This can take up to 10 minutes.
 
+## Required Data Enhancer Integration
+
+When this skill is invoked to create or scaffold a custom Copilot Connector, integrate the data enhancer by default. Do not build a connector that ingests raw crawled records or documents directly unless the user explicitly opts out.
+
+Use the reusable enhancer assets in:
+
+| Runtime | Skill asset |
+|---------|-------------|
+| Python | `sample_codes/data-enhancer/python/enhance_for_copilot.py` |
+| TypeScript | `sample_codes/data-enhancer/typescript/src/enhance_for_copilot.ts` |
+
+Required connector pipeline:
+
+1. **Crawl to a staging area** - write every new or changed source record/document from full and incremental crawls to a temporary dataset folder.
+2. **Run the data enhancer** - process the staged dataset with the Python or TypeScript enhancer before item ingestion.
+3. **Apply/merge schema suggestion** - review `schema-suggestion.json`, merge any source-specific schema requirements, register the final schema, and poll until registration completes.
+4. **Ingest enhanced items only** - read `enhanced-items.jsonl`; use each item's `properties` and `content.value` as the Graph external item payload. Apply source ACLs in the connector pipeline if the enhancer output does not include final ACLs.
+5. **Fail closed on enhancer errors** - if the enhancer fails, skip Graph item upserts for that crawl and surface/log the error. Never silently fall back to raw item ingestion.
+6. **Persist crawl state after successful ingestion** - update checkpoints only after enhanced items have been successfully written to Graph.
+
+The intended flow is:
+
+```text
+Source system crawl -> staging dataset -> data enhancer -> enhanced-items.jsonl -> ACL application -> Graph externalItem upsert
+```
+
+For TypeScript connectors, either import the enhancer helpers directly or execute the built CLI from the crawl job. For Python connectors, either import `enhance_for_copilot.py` or run it as a subprocess from the crawl job. In both cases, every crawl path that can create or update external items must pass through this enhancer stage.
+
 ## Choosing the Right Tool
 
-```
-Is there a pre-built connector for your data source?
-├── YES → Use the pre-built connector (M365 Admin Center)
-└── NO
-    ├── Do you need live access or indexed content?
-    │   ├── LIVE ACCESS → Federated Connectors (Preview)
-    │   └── INDEXED CONTENT
-    │       ├── Is your data source on-premises?
-    │       │   ├── YES → Copilot Connectors SDK + Connector Agent
-    │       │   └── NO
-    │       │       ├── Need full crawl management? → Connectors SDK or Agents Toolkit
-    │       │       └── Need maximum flexibility? → Microsoft Graph REST API directly
-    │       └── Building a Declarative Agent with connector? → Agents Toolkit
-```
+Answer these questions in order to find the right tool:
+
+| Step | Question | If YES |
+|------|----------|--------|
+| 1 | Is there a pre-built connector for your data source? | → **Pre-built connector** (M365 Admin Center). Done. |
+| 2 | Do you need live, real-time access instead of indexed content? | → **Federated Connectors** (Preview). Done. |
+| 3 | Is your data source on-premises? | → **Copilot Connectors SDK + Connector Agent**. Done. |
+| 4 | Are you building a Declarative Agent with the connector? | → **Microsoft 365 Agents Toolkit**. Done. |
+| 5 | Do you need full crawl management (scheduling, dedup, change detection)? | → **Copilot Connectors SDK** or **Agents Toolkit**. Done. |
+| 6 | None of the above? | → **Microsoft Graph REST API** for maximum flexibility. |
 
 | Tool | Language | Best For |
 |------|----------|----------|
@@ -92,6 +117,9 @@ Tags that tell Microsoft 365 the semantic role of each property (e.g., `title`, 
 
 ### ACL (Access Control List)
 Every item must have an ACL specifying who can see it. Values must be **Microsoft Entra object IDs** (GUIDs), not emails or UPNs. Security trimming happens at query time.
+
+### Data Enhancer
+The data enhancer converts raw source crawl output into Copilot-friendly external items. It supports tabular files (`csv`, `tsv`) and document-like files (`txt`, `md`, `html`, `json`, `jsonl`), emits `enhanced-items.jsonl`, produces an inspection CSV, and generates `schema-suggestion.json`. Connector implementations generated from this skill should include the enhancer as a required pre-ingestion stage for both full and incremental crawls.
 
 ## Hard Invariants (Schema Rules That Cause Rework If Missed)
 
@@ -244,6 +272,9 @@ What identity system does your source use?
 - [ ] Filter properties marked as `queryable` and/or `refinable`
 - [ ] Display properties marked as `retrievable`
 - [ ] Content property populated with rich, descriptive text
+- [ ] Data enhancer integrated into every full and incremental crawl path before Graph item upsert
+- [ ] `schema-suggestion.json` reviewed and merged into the connector schema before registration
+- [ ] Crawl job fails closed if the data enhancer fails; raw ingestion cannot bypass the enhancer
 - [ ] ACLs configured and tested with multiple user roles
 - [ ] Connection description is detailed and descriptive
 - [ ] `urlToItemResolver` configured for URL-based item resolution
@@ -257,6 +288,7 @@ What identity system does your source use?
 ## Copilot Optimization Checklist
 
 - [ ] Content is information-dense and well-structured
+- [ ] All new/changed crawl data is transformed by the data enhancer before indexing
 - [ ] Content leads with the most important information
 - [ ] Multiple text fields concatenated into content with labels
 - [ ] Summary items ingested for aggregate data queries
@@ -290,6 +322,7 @@ Pick the language that matches your project:
 | **TypeScript** | [create-connection.ts](sample_codes/typescript/getting-started/create-connection.ts) | [typescript/common-patterns/](sample_codes/typescript/common-patterns/) |
 | **REST API** | [create-connection-rest.http](sample_codes/rest/create-connection-rest.http) | — |
 | **Agents Toolkit** | [agents-toolkit/README.md](sample_codes/agents-toolkit/README.md) | [agents-toolkit/](sample_codes/agents-toolkit/) |
+| **Data Enhancer** | [data-enhancer/README.md](sample_codes/data-enhancer/README.md) | [Python](sample_codes/data-enhancer/python/) / [TypeScript](sample_codes/data-enhancer/typescript/) |
 
 Each language folder includes the same 6 samples: end-to-end connection setup, schema registration, item ingestion, throttle-resilient batch ingestion, ACL configuration, and incremental sync.
 
