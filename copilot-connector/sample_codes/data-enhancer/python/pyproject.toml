@@ -1,0 +1,16 @@
+[project]
+name = "data-enhancer"
+version = "0.1.0"
+description = "Convert sparse tabular datasets into enriched records for Microsoft Graph connector ingestion."
+requires-python = ">=3.10"
+license = "MIT"
+authors = [{ name = "Brian O'Donnell" }]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[project.scripts]
+enhance-for-copilot = "enhance_for_copilot:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

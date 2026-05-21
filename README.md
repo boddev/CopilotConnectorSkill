@@ -14,7 +14,7 @@ Copilot Connectors bring external data into the Microsoft Graph semantic index. 
 
 | Capability | How It Helps |
 |---|---|
-| **End-to-end workflow guidance** | Walks through the full 6-step process: prerequisites → connection → schema → ingestion → experiences → validation |
+| **End-to-end workflow guidance** | Walks through the full 7-step process: prerequisites → connection → data enhancement → schema → enhanced ingestion → experiences → validation |
 | **Schema design** | Knows all property types, attributes, semantic labels, and the hard rules that cause rework if missed |
 | **7 schema archetypes** | Pre-built schema templates for knowledge bases, tickets, CRM, HR, financial, product catalogs, and file repositories |
 | **Multi-language code generation** | Provides C#, Python, Java, TypeScript SDK patterns, and REST API examples for every operation |
@@ -25,6 +25,7 @@ Copilot Connectors bring external data into the Microsoft Graph semantic index. 
 | **Copilot optimization** | urlToItemResolver, user activities, Adaptive Card result types, rank hints, Declarative Agent guidance |
 | **Aggregation awareness** | Warns that Copilot can't aggregate across items and suggests pre-computed summary patterns, DA instructions, and anti-patterns |
 | **Delimited data handling** | CSV/TSV parsing, row-per-item mapping, multi-value delimiters, large file strategies |
+| **Data enhancer integration** | Includes Python and TypeScript scripts that transform every full and incremental crawl into Copilot-friendly enhanced items before Graph ingestion |
 | **Enterprise security** | App vs delegated permissions, Key Vault + Managed Identity, source system hardening, blast radius analysis |
 | **Production readiness** | Deployment architecture, crawl scheduling, audit logging, admin consent package preparation |
 | **Troubleshooting** | Common issues table, debugging workflow, SDK test utility, Admin Center monitoring |
@@ -79,6 +80,21 @@ copilot-connector/
     │       ├── throttle-resilient-ingestion.ts # Retry + semaphore concurrency
     │       ├── acl-configuration.ts            # All ACL patterns + external group management
     │       └── incremental-sync.ts             # Change detection + delta sync
+    ├── data-enhancer/
+    │   ├── README.md                           # Required crawl → enhancer → Graph ingestion contract
+    │   ├── python/
+    │   │   ├── enhance_for_copilot.py          # Python enhancer for tabular and document-like crawls
+    │   │   ├── nontabular.py                   # Compatibility exports for non-tabular helpers
+    │   │   ├── pyproject.toml
+    │   │   └── README.md
+    │   └── typescript/
+    │       ├── src/
+    │       │   ├── enhance_for_copilot.ts      # TypeScript enhancer for tabular and document-like crawls
+    │       │   └── nontabular.ts               # Compatibility exports for non-tabular helpers
+    │       ├── package.json
+    │       ├── package-lock.json
+    │       ├── tsconfig.json
+    │       └── README.md
     ├── rest/
     │   └── create-connection-rest.http         # Raw REST API calls
     └── agents-toolkit/
